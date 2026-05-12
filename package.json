@@ -1,0 +1,20 @@
+{
+  "name": "weibo-hotsearch-crawler",
+  "version": "1.0.0",
+  "description": "微博热搜爬虫 - 定时抓取微博热搜榜单",
+  "main": "src/crawler.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "crawl": "node src/crawler.js",
+    "crawl-and-serve": "node src/server.js"
+  },
+  "keywords": ["weibo", "hotsearch", "crawler"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "cheerio": "^1.0.0-rc.12",
+    "express": "^4.18.2"
+  }
+}

@@ -1,0 +1,30 @@
+# 依赖
+node_modules/
+
+# 日志
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 操作系统
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 数据文件（保留目录结构）
+data/*.json
+!data/.gitkeep
+
+# 构建产物
+dist/
+build/

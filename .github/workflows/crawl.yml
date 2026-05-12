@@ -1,0 +1,41 @@
+name: 微博热搜爬虫
+
+on:
+  # 每30分钟执行一次
+  schedule:
+    - cron: '*/30 * * * *'
+  # 也可以手动触发
+  workflow_dispatch:
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 检出版本库
+        uses: actions/checkout@v4
+      
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: 安装依赖
+        run: npm ci
+      
+      - name: 执行爬虫
+        run: npm run crawl
+      
+      - name: 上传数据到 GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
+          publish_branch: gh-pages
+        if: github.event_name == 'schedule'
+      
+      - name: 输出结果
+        run: |
+          echo "爬虫执行完成！"
+          echo "更新时间: $(date)"
+          cat data/hotsearch.json | head -c 500
