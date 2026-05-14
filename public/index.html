@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>微博热搜数据预览</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    .header {
+      text-align: center;
+      color: white;
+      padding: 40px 0;
+    }
+    
+    .header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+    }
+    
+    .header p {
+      opacity: 0.9;
+    }
+    
+    .status {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    
+    .status-item {
+      background: rgba(255,255,255,0.2);
+      padding: 10px 20px;
+      border-radius: 20px;
+    }
+    
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    }
+    
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #333;
+    }
+    
+    .btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: transform 0.2s;
+    }
+    
+    .btn:hover { transform: scale(1.05); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    
+    .hot-list {
+      list-style: none;
+    }
+    
+    .hot-item {
+      display: flex;
+      align-items: center;
+      padding: 16px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .hot-item:last-child { border-bottom: none; }
+    
+    .hot-rank {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 600;
+      color: #999;
+      margin-right: 16px;
+    }
+    
+    .hot-rank.top { color: #ff4757; }
+    .hot-rank.new::before { content: '🆕'; }
+    
+    .hot-content { flex: 1; }
+    
+    .hot-title {
+      font-size: 16px;
+      color: #333;
+      margin-bottom: 4px;
+    }
+    
+    .hot-meta {
+      font-size: 12px;
+      color: #999;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+    
+    .error {
+      text-align: center;
+      padding: 40px;
+      color: #ff4757;
+    }
+    
+    .empty {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+    }
+    
+    .footer {
+      text-align: center;
+      color: rgba(255,255,255,0.7);
+      padding: 20px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔥 微博热搜</h1>
+      <p>实时抓取的微博热搜榜单</p>
+      <div class="status">
+        <span class="status-item" id="updateTime">加载中...</span>
+        <span class="status-item" id="dataCount">-</span>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">热搜榜单</span>
+        <button class="btn" id="refreshBtn" onclick="fetchData()">🔄 刷新数据</button>
+      </div>
+      <div id="content">
+        <div class="loading">正在加载数据...</div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">📱 小程序接入说明</span>
+      </div>
+      <div style="font-size: 14px; color: #666; line-height: 1.8;">
+        <p><strong>API 接口地址：</strong></p>
+        <code style="background: #f5f5f5; padding: 10px; display: block; margin: 10px 0; border-radius: 8px; overflow-x: auto;">
+          https://你的域名/api/hotsearch
+        </code>
+        <p><strong>接口返回格式：</strong></p>
+        <pre style="background: #f5f5f5; padding: 10px; border-radius: 8px; overflow-x: auto; font-size: 12px;">
+{
+  "success": true,
+  "data": {
+    "updateTime": "2024-01-01T12:00:00.000Z",
+    "count": 50,
+    "list": [
+      { "id": 1, "title": "#热搜话题#", "heat": "1000万", ... }
+    ]
+  }
+}</pre>
+      </div>
+    </div>
+    
+    <div class="footer">
+      数据来源：微博热搜 | 更新间隔：30分钟
+    </div>
+  </div>
+  
+  <script>
+    // 获取当前域名
+    const API_BASE = window.location.origin;
+    
+    async function fetchData() {
+      const btn = document.getElementById('refreshBtn');
+      const content = document.getElementById('content');
+      
+      btn.disabled = true;
+      btn.textContent = '加载中...';
+      content.innerHTML = '<div class="loading">正在加载数据...</div>';
+      
+      try {
+        const response = await fetch(`${API_BASE}/api/hotsearch`);
+        const result = await response.json();
+        
+        if (result.success) {
+          renderData(result.data);
+          document.getElementById('dataCount').textContent = `共 ${result.data.count} 条`;
+        } else {
+          content.innerHTML = `<div class="error">获取数据失败: ${result.message}</div>`;
+        }
+      } catch (error) {
+        content.innerHTML = `<div class="error">请求失败: ${error.message}</div>`;
+      }
+      
+      btn.disabled = false;
+      btn.textContent = '🔄 刷新数据';
+    }
+    
+    function renderData(data) {
+      const updateTime = new Date(data.updateTime);
+      document.getElementById('updateTime').textContent = 
+        `更新时间: ${updateTime.toLocaleString('zh-CN')}`;
+      
+      if (!data.list || data.list.length === 0) {
+        document.getElementById('content').innerHTML = '<div class="empty">暂无数据</div>';
+        return;
+      }
+      
+      const html = data.list.map(item => `
+        <li class="hot-item">
+          <span class="hot-rank ${item.id <= 3 ? 'top' : ''} ${item.trend === 'new' ? 'new' : ''}">
+            ${item.id <= 3 ? '🔥' : item.id}
+          </span>
+          <div class="hot-content">
+            <div class="hot-title">${item.title}</div>
+            <div class="hot-meta">热度: ${formatHeat(item.heat)}</div>
+          </div>
+        </li>
+      `).join('');
+      
+      document.getElementById('content').innerHTML = `<ul class="hot-list">${html}</ul>`;
+    }
+    
+    function formatHeat(heat) {
+      if (typeof heat === 'number') {
+        if (heat >= 100000000) return (heat / 100000000).toFixed(1) + '亿';
+        if (heat >= 10000) return (heat / 10000).toFixed(0) + '万';
+        return heat.toString();
+      }
+      return heat;
+    }
+    
+    // 页面加载时自动获取数据
+    fetchData();
+  </script>
+</body>
+</html>
